@@ -11,7 +11,7 @@ const WebSocket = require('ws');
 let clients=[]
 
 let devices ={
-	relay_modules1 : { port : 8885},
+	mmm_esp32Cam : { port : 8885},
 }
 let count = 0;
 

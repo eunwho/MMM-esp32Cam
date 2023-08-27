@@ -30,12 +30,11 @@ Module.register("MMM-esp32CamDoorBell", {
 	socketNotificationReceived: function(notification, payload) {
 		var self = this
 
-		if(notification === 'ESP32_CAM'){
-			
+		if(notification === 'ESP32_CAM'){		
 			let md = JSON.parse(payload);
-			console.log( md.devices.relay_modules1)
-			if(md.devices.relay_modules1.image){
-				document.querySelector('#image1').src = "data:image/jpeg;base64," + md.devices.relay_modules1.image;
+			// console.log( md.devices.mmm_esp32Cam)
+			if(md.devices.mmm_esp32Cam.image){
+				document.querySelector('#image1').src = "data:image/jpeg;base64," + md.devices.mmm_esp32Cam.image;
 			}
 		}
 		self.updateDom

@@ -1,20 +1,25 @@
 /* global Module */
 
-/* Magic Mirror
- * Module: MMM-websocket
- *
- * By Jan Löbel
+/* Magic Mirror Module: MMM-esp32CamDoorBell
+ * By Soonkil Jung
  * MIT Licensed.
  */
 const NodeHelper = require("node_helper");
-const WebSocket = require("ws");
+const path = require('path');
+const WebSocket = require('ws');
+
+let clients=[]
+
+let devices ={
+	relay_modules1 : { port : 8885},
+}
+let count = 0;
 
 module.exports = NodeHelper.create({
 	socketNotificationReceived: function (notification, payload) {
 		var self = this;
 
 		if(notification === "WS_CONNECT") {
-			// Connect event will be handeled internally
 			self.config = payload.config;
 			self.connect(payload.config);
 			return;
@@ -45,43 +50,31 @@ module.exports = NodeHelper.create({
 	connect: function(config, callback) {
 		var self = this;
 
-		// Disconnect to assure only one instance is running.
-		self.disconnect();
-
-		const url = "ws://" + config.host + ":" + config.port;
-		self.ws = new WebSocket(url);
-
-		// Register error listener
-		self.ws.onerror = function(event){
-			if(callback) {
-				callback(event.code)
-			}
-		};
-
-		// Register open listener
-		self.ws.onopen = function open() {
-			self.debug("Connection established:", url);
-
-			// Register on close listener
-			self.ws.onclose = function close(event) {
-				self.error("Connection was closed!", event.code, event.reason);
-				self.reconnect(config);
-			};
-
-			// Register message handler
-			self.ws.onmessage = function message(event) {
-				try {
-					self.sendMessage(JSON.parse(event.data));
-				} catch(error) {
-					self.error("Error while handling event:", event, error);
-				}
-			};
-
-			// Notify callback if needed
-			if(callback) {
-				callback();
-			}
-		};
+		Object.entries(devices).forEach(([key]) => {
+			const device = devices[key];
+			
+			new WebSocket.Server({port: device.port}, () => console.log(`WS Server is listening at ${device.port}`)).on('connection',(ws) => {
+				ws.on('message', data => {
+					if (ws.readyState !== ws.OPEN) return;		
+					// console.log(data);
+					if (device.command) {
+						ws.send(device.command);
+						device.command = null; // Consume
+					}		
+					if (typeof data === 'object') {
+						device.image = Buffer.from(Uint8Array.from(data)).toString('base64');
+					} else {
+						device.peripherals = data.split(",").reduce((acc, item) => {
+							const key = item.split("=")[0];
+							const value = item.split("=")[1];
+							acc[key] = value;
+							return acc;
+						}, {});
+					}	
+					this.sendSocketNotification("ESP32_CAM",JSON.stringify({ devices: devices }));
+				});
+			});
+		});
 	},
 
 	sendMessage: function(event) {

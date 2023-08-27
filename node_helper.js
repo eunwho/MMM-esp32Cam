@@ -13,14 +13,22 @@ let clients=[]
 let devices ={
 	mmm_esp32Cam : { port : 8885},
 }
-let count = 0;
+
 
 module.exports = NodeHelper.create({
+	start: function(){
+		//this.esp32CamTimer1 = false
+		//this.esp32CamTimer2 = false
+	},
+
 	socketNotificationReceived: function (notification, payload) {
 		var self = this;
 
+
 		if(notification === "WS_CONNECT") {
 			self.config = payload.config;
+			esp32CamTimer1 = false
+			esp32CamTimer2 = false
 			self.connect(payload.config);
 			return;
 		} else if(notification === "WS_DISCONNECT") {
@@ -62,7 +70,9 @@ module.exports = NodeHelper.create({
 						device.command = null; // Consume
 					}		
 					if (typeof data === 'object') {
+
 						device.image = Buffer.from(Uint8Array.from(data)).toString('base64');
+
 					} else {
 						device.peripherals = data.split(",").reduce((acc, item) => {
 							const key = item.split("=")[0];

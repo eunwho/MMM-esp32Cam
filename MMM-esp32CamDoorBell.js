@@ -5,6 +5,10 @@
  * By Soonkil Jung
  * MIT Licensed.
  */
+
+let esp32CamTimer1 = false
+let esp32CamTimer2 = false
+
 Module.register("MMM-esp32CamDoorBell", {
 	defaults: {
 		host: "192.168.45.230",
@@ -30,14 +34,46 @@ Module.register("MMM-esp32CamDoorBell", {
 	socketNotificationReceived: function(notification, payload) {
 		var self = this
 
-		if(notification === 'ESP32_CAM'){		
-			let md = JSON.parse(payload);
-			// console.log( md.devices.mmm_esp32Cam)
-			if(md.devices.mmm_esp32Cam.image){
-				document.querySelector('#image1').src = "data:image/jpeg;base64," + md.devices.mmm_esp32Cam.image;
+		if(notification === 'ESP32_CAM'){
+
+			if ( esp32CamTimer1 === false ){
+				console.log('enter this 1')
+				document.querySelector('#image1').style.opacity = "1.0"
+				self.updateDom
+
+				esp32CamTimer1 = true
+				esp32CamTimer2 = false
+
+				const timerCamId2 = setTimeout(() => { 
+					console.log('enter this 2')
+					esp32CamTimer2 = true ; 
+					document.querySelector('#image1').style.opacity = "0.0"
+					self.updateDom
+				}, 30000);
+
+				const timerCamId1 = setTimeout(() => { 
+					console.log('enter this 3')
+					esp32CamTimer1 = false  
+					esp32CamTimer2 = false
+					//this.hide 
+					document.querySelector('#image1').style.opacity = "0.0"
+					self.updateDom
+				}, 100000);							
+
+			}	
+
+			if((esp32CamTimer1 === true ) && ( esp32CamTimer2 === false ) ){
+				let md = JSON.parse(payload);
+				// console.log( md.devices.mmm_esp32Cam)
+				if(md.devices.mmm_esp32Cam.image){
+					document.querySelector('#image1').src = "data:image/jpeg;base64," + md.devices.mmm_esp32Cam.image;
+					self.updateDom
+				}
+			}else {
+				document.querySelector('#image1').style.opacity = "0.0"
+				self.updateDom
 			}
 		}
-		self.updateDom
 	},
 
 	debug: function() {
@@ -51,32 +87,18 @@ Module.register("MMM-esp32CamDoorBell", {
 		var self = this;
 		Log.error.apply(self, arguments);
 	},
-
 	getDom: function () {
 		var wrapper = document.createElement("div")
 		wrapper.className = "mmm-esp32Cam"
 
 		var image = document.createElement("img")
 		image.className= 'image1'
-		image.src ="https://community.thriveglobal.com/wp-content/uploads/2020/06/summer.jpg"
+		//image.src ="https://community.thriveglobal.com/wp-content/uploads/2020/06/summer.jpg"
 		image.id = "image1";
 		image.style.maxWidth = "50%"
 		image.style.maxHeight = "50%"
-		image.style.opacity = "1.0"
+		image.style.opacity = "0.0"
 		wrapper.appendChild(image)
 		return wrapper;
-	},
-/*	// Override dom generator.
-	getDom: function () {
-		const self = this
-		var wrapper = document.createElement('div')
-		var imageWrapper = document.createElement('img',{id:"esp32Cam",className:"esp32Cam"})
-		imageWrapper.src = self.imageBuff
-		//imageWrapper.src = "/home/ew/MagicMirror/mmm_test.jpg"
-		//imageWrapper.className = "esp32Cam"
-		imageWrapper.style.maxWidth = self.config.maxWidth
-		wrapper.appendChild(imageWrapper)
-		return wrapper
 	}
-*/	
 });

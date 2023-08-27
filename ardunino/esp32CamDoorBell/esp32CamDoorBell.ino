@@ -1,11 +1,18 @@
 #include "esp_camera.h"
 #include <WiFi.h>
 #include <ArduinoWebsockets.h>
+
+#include <SimpleTimer.h> 
+
 #include "ssid_pw.h"
 
 #define CAMERA_MODEL_AI_THINKER // Has PSRAM
 #include <stdio.h>
 #include "camera_pins.h"
+
+
+SimpleTimer timer;
+int timerId;
 
 // ===========================
 // Enter your WiFi credentials
@@ -86,7 +93,7 @@ void setup() {
 }
 
 void loop() {
-
+  if( millis() > 90000) { esp_deep_sleep_start();}
   while(!client.connect(websocket_server_host, websocket_server_port1, "/")){ delay( 500 ); }
 
   client.poll();
@@ -96,6 +103,7 @@ void loop() {
     esp_camera_fb_return(fb);
     // Serial.println('frame error');
     return;
+
   } 
   
   if(fb->format != PIXFORMAT_JPEG ) { 
@@ -105,20 +113,5 @@ void loop() {
 
   client.sendBinary( ( const char * ) fb ->buf, fb ->len );
   esp_camera_fb_return(fb);
-/*  
-  float h =12.34;
-  float t = 56.78;
-
-  String output = "temp=" + String(t, 2) + ",hum=" + String( h, 2 ) + ", light = 12";
-
-  //client.send(output);
-  // Do nothing. Everything is done in another task by the web server
-  
-  if ( count > 50 ){
-    count = 0;
-    Serial.println(count);
-  }  
-  count ++;
-*/
-  delay(1000);
+  delay(200);
 }
